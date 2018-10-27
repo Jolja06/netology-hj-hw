@@ -8,9 +8,10 @@ class Slider {
 
     this.container = container;
     this.images = images;
-    this.index = -1;
+    this.index = 0;
     this.interval = 5000;
 
+    this.render();
     this.start();
   }
 

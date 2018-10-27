@@ -7,12 +7,12 @@ class Gallery {
         }
 
         this.images = images;
-        this.index = -1;
-
+        this.index = 0;
         this.image = container.querySelector('#currentPhoto');
+        this.render();
+
         this.nextButton = container.querySelector('#nextPhoto');
         this.prevButton = container.querySelector('#prevPhoto');
-
         this.nextButton.addEventListener('click', this.goForward.bind(this));
         this.prevButton.addEventListener('click', this.goBack.bind(this));
     }

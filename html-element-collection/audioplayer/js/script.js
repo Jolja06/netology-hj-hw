@@ -1,61 +1,69 @@
 'use strict';
 
 class Player {
-  constructor(player, title, audio) {
-    if (!(player) instanceof Element || !(title) instanceof Element || !Array.isArray(audio)) {
+  constructor(container, songs) {
+    if (!(container) instanceof Element || !Array.isArray(songs)) {
       return;
     }
 
-    this.player = player;
-    this.title = title;
-    this.audio = audio;
     this.index = 0;
-    this.isPlay = false;
+    this.isPlaying = false;
+    this.songs = songs;
 
-    this.btnPlay = this.player.getElementsByClassName('playstate')[0];
-    this.btnStop = this.player.getElementsByClassName('stop')[0];
-    this.btnNext = this.player.getElementsByClassName('next')[0];
-    this.btnBack = this.player.getElementsByClassName('back')[0];
-    this.track = this.player.getElementsByTagName('audio')[0];
+    this.container = container;
+    this.player = this.container.querySelector('audio');
+    this.title = container.querySelector('.title');
 
-    this.btnPlay.addEventListener('click', this.playSong.bind(this));
-    this.btnStop.addEventListener('click', this.stopSong.bind(this));
-    this.btnNext.addEventListener('click', this.nextSong.bind(this));
-    this.btnBack.addEventListener('click', this.backSong.bind(this));
+    this.btnPlay = this.container.querySelector('.playstate');
+    this.btnStop = this.container.querySelector('.stop');
+    this.btnNext = this.container.querySelector('.next');
+    this.btnBack = this.container.querySelector('.back');
+
+    this.btnPlay.addEventListener('click', () => this.togglePlaying());
+    this.btnStop.addEventListener('click', () => this.togglePlaying(true));
+    this.btnNext.addEventListener('click', this.goForward.bind(this));
+    this.btnBack.addEventListener('click', this.goBack.bind(this));
   }
 
-  playSong() {
-    !this.isPlay ? this.track.play() : this.track.pause();
-    this.isPlay = this.player.classList.toggle('play');
+  changeSong() {
+    this.title.title = this.songs[this.index].title;
+    this.player.src = this.songs[this.index].url;
   }
 
-  stopSong() {
-    this.track.pause();
-    this.track.currentTime = 0;
-    this.player.classList.remove('play');
-    this.isPlay = false;
+  goBack() {
+    this.index = this.index <= 0 ? this.songs.length - 1 : this.index - 1;
+    this.reset();
+    this.changeSong();
   }
 
-  nextSong() {
-    this.stopSong();
-    this.index = (this.index + 1) % this.audio.length;
-    this.title.title = this.audio[this.index].title;
-    this.track.src = this.audio[this.index].url;
+  goForward() {
+    this.index = (this.index + 1) % this.songs.length;
+    this.reset();
+    this.changeSong();
   }
 
-  backSong() {
-    this.stopSong();
-    this.index <= 0 ? this.index = this.audio.length - 1 : this.index--;
-    this.title.title = this.audio[this.index].title;
-    this.track.src = this.audio[this.index].url;
+  reset() {
+    this.isPlaying = false;
+    this.container.classList.remove('play');
+    this.player.pause();
+    this.player.currentTime = 0;
   }
 
+  togglePlaying(isReset) {
+    if (isReset) {
+      this.reset();
+      return;
+    }
+
+    this.isPlaying = !this.isPlaying;
+    this.container.classList.toggle('play', this.isPlaying);
+    this.isPlaying ? this.player.play() : this.player.pause();
+  }
 }
 
 window.onload = () => {
   new Player(
-    document.getElementsByClassName('mediaplayer')[0],
-    document.getElementsByClassName('title')[0],
+    document.querySelector('.mediaplayer'),
     [
       {
         title: 'LA Chill Tour',

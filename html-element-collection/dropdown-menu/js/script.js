@@ -1,24 +1,20 @@
 'use strict';
 
-class Menu {
-  constructor(toggle) {
-    if (!(toggle instanceof Element)) {
+class Dropdown {
+  constructor(container) {
+    if (!(container instanceof Element)) {
       return;
     }
 
-    this.toggle = toggle;
-
-    this.toggle.addEventListener('click', this.toggleProfile.bind(this));
+    this.container = container;
+    this.container.addEventListener('click', this.toggle.bind(this));
   }
 
-  toggleProfile() {
-    this.toggle.classList.toggle('active');
+  toggle() {
+    this.container.classList.toggle('active');
   }
-
 }
 
 window.onload = () => {
-  new Menu(
-    document.getElementsByClassName('wrapper-dropdown')[0]
-  )
+  new Dropdown(document.querySelector('.wrapper-dropdown:first-child'));
 };

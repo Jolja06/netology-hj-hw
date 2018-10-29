@@ -1,25 +1,22 @@
 'use strict';
 
-class Machine {
-  constructor(drumKits) {
-    if (!(drumKits instanceof HTMLCollection)) {
+class DrumSet {
+  constructor(container) {
+    if (!(container instanceof Element)) {
       return;
     }
 
-    this.drumKits = drumKits;
+    this.container = container;
 
-    for (let drumKit of this.drumKits) {
-      drumKit.addEventListener('click', this.playKit.bind(this, drumKit));
-    }
+    this.container.addEventListener('click', this.play.bind(this));
   }
 
-  playKit(drum) {
-    drum.getElementsByTagName('audio')[0].play();
+  play(event) {
+    const item = event.target.closest('li');
+    item.querySelector('audio').play();
   }
 }
 
 window.onload = () => {
-  new Machine(
-    document.getElementsByClassName('drum-kit__drum')
-  );
+  new DrumSet(document.querySelector('ul'));
 };

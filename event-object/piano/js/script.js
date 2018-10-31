@@ -1,79 +1,129 @@
 'use strict';
 
+const Keys = {
+  ALT: 'Alt',
+  SHIFT: 'Shift',
+};
+
+const Octaves = {
+  HIGHER: 'higher',
+  LOWER: 'lower',
+  MIDDLE: 'middle',
+};
+
+const mapOctaveKeyToOctave = {
+  [Keys.ALT]: Octaves.HIGHER,
+  [Keys.SHIFT]: Octaves.LOWER,
+};
+
 class Piano {
   constructor(container, octaves) {
     if (!container instanceof Element || !Array.isArray(octaves)) {
       return;
     }
 
-    this.container = container;
+    this.index = null;
+    this.isPlaying = false;
+    this.lastOctaveKey = null;
     this.octaves = octaves;
-    this.octaveActivated = 1;
 
-    this.keys = document.querySelectorAll('audio');
-
-    this.container.addEventListener('click', this.play.bind(this));
-    document.addEventListener('keydown', this.changeOctave.bind(this));
-    document.addEventListener('keyup', this.changeOctave.bind(this));
-
-    this.setOctave();
+    this.container = container;
+    this.container.addEventListener('click', this.handleClick.bind(this));
+    document.addEventListener('keydown', this.handleSetOctave.bind(this));
+    document.addEventListener('keyup', this.handleRemoveOctave.bind(this));
   }
 
-  changeOctave(event) {
+  handleClick(event) {
+    this.setIndex(event.target);
+    this.setAudio(mapOctaveKeyToOctave[this.lastOctaveKey] || Octaves.MIDDLE);
+    this.play();
+  }
+
+  handleSetOctave(event) {
+    if (!this.isPlaying) {
+      return;
+    }
+
     switch (event.key) {
-      case 'Shift':
-        event.type === 'keydown' ? this.octaveActivated = 0 : this.octaveActivated = 1;
+      case Keys.ALT:
+        this.setAudio(Octaves.HIGHER);
+        this.lastOctaveKey = Keys.ALT;
         break;
-
-      case 'Alt':
-        event.type === 'keydown' ? this.octaveActivated = 2 : this.octaveActivated = 1;
+      case Keys.SHIFT:
+        this.setAudio(Octaves.LOWER);
+        this.lastOctaveKey = Keys.SHIFT;
         break;
-
       default:
-        this.octaveActivated = 1;
-
-    }
-    this.setOctave();
-    this.changeView();
-  }
-
-  changeView() {
-    switch (this.octaveActivated) {
-      case 0:
-        this.container.classList.remove('middle');
-        this.container.classList.add('lower');
-        break;
-
-      case 2:
-        this.container.classList.remove('middle');
-        this.container.classList.add('higher');
-        break;
-
-      default:
-        this.container.classList.remove('lower', 'higher');
-        this.container.classList.add('middle');
         break;
     }
   }
 
-  setOctave() {
-    this.keys.forEach((key, index) => key.src = 'sounds/' + this.octaves[this.octaveActivated][index]);
+  handleRemoveOctave(event) {
+    if (!this.isPlaying) {
+      return;
+    }
+
+    if (this.lastOctaveKey === event.key) {
+      this.setAudio(Octaves.MIDDLE);
+      this.lastOctaveKey = null;
+    }
   }
 
-  play(event) {
-    const item = event.target.closest('li');
-    item.querySelector('audio').play();
+  play() {
+    const player = this.container.querySelectorAll('audio')[this.index];
+    if (player) {
+      player.play();
+      this.isPlaying = true;
+    }
   }
 
+  setAudio(octave = Octaves.MIDDLE) {
+    const player = this.container.querySelectorAll('audio')[this.index];
+    player.src = 'sounds/' + this.octaves[this.index][octave];
+
+    this.container.classList.remove(Octaves.HIGHER, Octaves.LOWER, Octaves.MIDDLE);
+    this.container.classList.add(octave);
+  }
+
+  setIndex(target) {
+    const item = target.closest('li');
+    if (!item) {
+      return;
+    }
+
+    this.index = Array.from(this.container.children).indexOf(item);
+  }
 }
 
 window.onload = () => {
   new Piano(
     document.querySelector('.set'),
     [
-      ['lower/first.mp3', 'lower/second.mp3', 'lower/third.mp3', 'lower/fourth.mp3', 'lower/fifth.mp3'],
-      ['middle/first.mp3', 'middle/second.mp3', 'middle/third.mp3', 'middle/fourth.mp3', 'middle/fifth.mp3'],
-      ['higher/first.mp3', 'higher/second.mp3', 'higher/third.mp3', 'higher/fourth.mp3', 'higher/fifth.mp3'],
-    ]
-  )
+      {
+        [Octaves.HIGHER]: 'higher/first.mp3',
+        [Octaves.LOWER]: 'lower/first.mp3',
+        [Octaves.MIDDLE]: 'middle/first.mp3',
+      },
+      {
+        [Octaves.HIGHER]: 'higher/second.mp3',
+        [Octaves.LOWER]: 'lower/second.mp3',
+        [Octaves.MIDDLE]: 'middle/second.mp3',
+      },
+      {
+        [Octaves.HIGHER]: 'higher/third.mp3',
+        [Octaves.LOWER]: 'lower/third.mp3',
+        [Octaves.MIDDLE]: 'middle/third.mp3',
+      },
+      {
+        [Octaves.HIGHER]: 'higher/fourth.mp3',
+        [Octaves.LOWER]: 'lower/fourth.mp3',
+        [Octaves.MIDDLE]: 'middle/fourth.mp3',
+      },
+      {
+        [Octaves.HIGHER]: 'higher/fifth.mp3',
+        [Octaves.LOWER]: 'lower/fifth.mp3',
+        [Octaves.MIDDLE]: 'middle/fifth.mp3',
+      },
+    ],
+  );
 };

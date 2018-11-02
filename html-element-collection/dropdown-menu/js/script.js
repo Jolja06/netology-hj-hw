@@ -1,20 +1,10 @@
 'use strict';
 
-class Dropdown {
-  constructor(container) {
-    if (!(container instanceof Element)) {
-      return;
-    }
-
-    this.container = container;
-    this.container.addEventListener('click', this.toggle.bind(this));
-  }
-
-  toggle() {
-    this.container.classList.toggle('active');
-  }
-}
-
 window.onload = () => {
-  new Dropdown(document.querySelector('.wrapper-dropdown:first-child'));
+  const menu = document.querySelector('.wrapper-dropdown');
+  menu.addEventListener('click', toggleMenu);
+
+  function toggleMenu() {
+    menu.classList.toggle('active');
+  }
 };

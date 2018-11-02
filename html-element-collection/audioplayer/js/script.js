@@ -32,14 +32,14 @@ class Player {
 
   goBack() {
     this.index = this.index <= 0 ? this.songs.length - 1 : this.index - 1;
-    this.reset();
     this.changeSong();
+    this.isPlaying ? this.player.play() : this.player.pause();
   }
 
   goForward() {
     this.index = (this.index + 1) % this.songs.length;
-    this.reset();
     this.changeSong();
+    this.isPlaying ? this.player.play() : this.player.pause();
   }
 
   reset() {

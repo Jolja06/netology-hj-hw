@@ -7,13 +7,21 @@ class DrumSet {
     }
 
     this.container = container;
+    this.isPlaying = false;
 
     this.container.addEventListener('click', this.play.bind(this));
   }
 
   play(event) {
-    const item = event.target.closest('li');
-    item.querySelector('audio').play();
+    const item = event.target.closest('li').querySelector('audio');
+    
+    if (item.currentTime > 0) {
+      item.pause();
+      item.currentTime = 0;
+      item.play();
+    } else {
+      item.play();
+    }
   }
 }
 

@@ -13,14 +13,14 @@ class DrumSet {
   }
 
   play(event) {
-    const item = event.target.closest('li').querySelector('audio');
-    
-    if (item.currentTime > 0) {
-      item.pause();
-      item.currentTime = 0;
-      item.play();
+    const player = event.target.closest('li').querySelector('audio');
+
+    if (player.currentTime > 0) {
+      player.pause();
+      player.currentTime = 0;
+      player.play();
     } else {
-      item.play();
+      player.play();
     }
   }
 }

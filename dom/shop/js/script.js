@@ -1,41 +1,42 @@
 'use strict';
 
-class Basket {
-  constructor(container, helper) {
-    if (!(container instanceof Element) || typeof helper !== 'function') {
+class Cart {
+  constructor(container) {
+    if (!(container instanceof Element)) {
       return;
     }
 
+    this.count = 0;
+    this.total = 0;
+
     this.container = container;
-    this.helper = helper;
+    this.countElement = this.container.querySelector('#cart-count');
+    this.totalElement = this.container.querySelector('#cart-total-price');
 
-    this.btnsAdd = this.container.querySelectorAll('.add');
-    this.cartCount = this.container.querySelector('#cart-count');
-    this.totalPrice = this.container.querySelector('#cart-total-price');
-
-    this.intermediatePrice = 0;
-    this.btnsAdd.forEach(btn => btn.addEventListener('click', this.addProduct.bind(this)))
+    this.container.addEventListener('click', this.handleClick.bind(this));
   }
 
-  addProduct(event) {
+  handleClick(event) {
     const price = event.target.getAttribute('data-price');
-    this.setCount();
-    this.setPrice(price);
+    if (!price) {
+      return;
+    }
+
+    this.add(Number(price));
   }
 
-  setCount() {
-    this.cartCount.innerHTML++;
+  add(price) {
+    this.count++;
+    this.total += price;
+    this.render();
   }
 
-  setPrice(price) {
-    this.intermediatePrice += +price;
-    this.totalPrice.innerHTML = this.helper(this.intermediatePrice);
+  render() {
+    this.countElement.innerHTML = this.count;
+    this.totalElement.innerHTML = getPriceFormatted(this.total);
   }
 }
 
-document.addEventListener('DOMContentLoaded',
-  new Basket(
-    document.querySelector('#container'),
-    getPriceFormatted
-  )
-);
+document.addEventListener('DOMContentLoaded', () => {
+    new Cart(document.querySelector('#container'));
+});

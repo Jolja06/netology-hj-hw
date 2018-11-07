@@ -12,12 +12,8 @@ class Navigation {
   }
 
   toggleMenu(event) {
-    if (!(event.ctrlKey && event.altKey)) {
-      return;
-    }
-
-    if (event.code === 'KeyT') {
-      this.nav.classList.toggle('visible')
+    if ((event.ctrlKey && event.altKey) && event.code === 'KeyT') {
+      this.nav.classList.toggle('visible');
     }
   }
 }

@@ -7,56 +7,62 @@ class Subscribe {
     }
 
     this.container = container;
+    this.xhr = new XMLHttpRequest();
 
     this.nav = document.querySelector('nav');
     this.controls = this.nav.querySelectorAll('a');
     this.content = this.container.querySelector('#content');
     this.loader = this.container.querySelector('#preloader');
-    this.nav.addEventListener('click', this.sendRequest.bind(this));
 
-    this.xhrRequest('GET', 'components/email-tab.html', true);
+    this.nav.addEventListener('click', this.handleClick.bind(this));
+    this.xhr.addEventListener('load', this.handleLoad.bind(this));
+
+    this.init();
 
   }
 
-  sendRequest(event) {
-    event.preventDefault();
-    const item = event.target.closest('a');
-    this.xhrRequest('GET', item.href, true);
-    this.setActive(item);
+  init() {
+    const activeLink = this.nav.querySelector('a.active');
+    if (activeLink) {
+      this.fetchContent(activeLink.href);
+    }
   }
 
-  setActive(target) {
+  handleClick(event) {
+    const target = event.target;
+    if (target.tagName === 'A') {
+      event.preventDefault();
+      this.fetchContent(target.href);
+      this.setActiveTab(target);
+    }
+  }
+
+  handleLoad() {
+    this.toggleLoader(false);
+    if (this.xhr.status === 200) {
+      this.content.innerHTML = this.xhr.responseText;
+    } else {
+      this.content.innerHTML = `<p>Кажется, что-то пошло не так, попробуйте позднее</p>`;
+    }
+  }
+
+  fetchContent(url) {
+    this.xhr.open('GET', url, true);
+    this.xhr.send();
+    this.toggleLoader(true);
+  }
+
+  setActiveTab(target) {
     this.controls.forEach(control => control.classList.remove('active'));
     target.classList.add('active');
   }
 
-  xhrRequest(method, url, async = true) {
-    let xhr = new XMLHttpRequest();
-    xhr.open(method, url, async);
-    xhr.addEventListener('loadstart', () => this.showLoader());
-    xhr.send();
-    xhr.addEventListener('load', () => this.onLoad(xhr))
-  }
-
-  showLoader() {
-    this.content.classList.add('hidden');
-    this.loader.classList.remove('hidden');
-  }
-
-  onLoad(response) {
-
-    this.loader.classList.add('hidden');
-    this.content.classList.remove('hidden');
-    if (response.status >= 200 && response.status < 400) {
-      this.content.innerHTML = response.responseText;
-    } else {
-      this.content.innerHTML = `<p>Кажется, что-то пошло не так, попробуйте позднее</p>`
-    }
+  toggleLoader(isForce) {
+    this.content.classList.toggle('hidden', isForce);
+    this.loader.classList.toggle('hidden', !isForce);
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  new Subscribe(
-    document.querySelector('.tabs')
-  );
+  new Subscribe(document.querySelector('.tabs'));
 });

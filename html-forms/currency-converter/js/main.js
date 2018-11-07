@@ -6,11 +6,11 @@ class Converter {
       return;
     }
 
-    this.amount = this.input.value;
     this.container = container;
     this.currency = [];
-    this.from = this.container.querySelector('#from');
     this.input = this.container.querySelector('#source');
+    this.amount = this.input.value;
+    this.from = this.container.querySelector('#from');
     this.loader = document.querySelector('#loader');
     this.output = this.container.querySelector('#result');
     this.selects = this.container.querySelectorAll('select');

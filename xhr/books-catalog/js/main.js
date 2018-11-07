@@ -2,46 +2,49 @@
 
 const isURL = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
 class Catalog {
-  constructor(container, card, server) {
-    if (!(container instanceof Element) || !(card instanceof Element) || !(isURL.test(server))) {
+  constructor(container, card, url) {
+    if (!(container instanceof Element) || !(card instanceof Element) || !(isURL.test(url))) {
       return;
     }
 
+    this.books = [];
+
     this.container = container;
     this.card = card;
-    this.url = server;
+    this.url = url;
+    this.xhr = new XMLHttpRequest();
 
-    this.bookList = [];
-    this.xhrRequest('GET', this.url, true);
+    this.xhr.addEventListener('load', this.handleLoad.bind(this));
+
+    this.fetchContent();
   }
 
-  xhrRequest(method, url, async = true) {
-    let xhr = new XMLHttpRequest();
-    xhr.open(method, url, async);
-    xhr.send();
-    xhr.addEventListener('load', () => this.onLoad(xhr));
-  }
-
-  onLoad(response) {
-    this.bookList = JSON.parse(response.responseText);
+  handleLoad() {
+    this.books = JSON.parse(this.xhr.responseText);
     this.render();
+  }
+
+  fetchContent() {
+    this.xhr.open('GET', this.url, true);
+    this.xhr.send();
   }
 
   renderBook(book) {
     const bookElement = document.createElement('li');
-    const bookCover = document.createElement('img');
     bookElement.dataset.title = book.title;
     bookElement.dataset.author = book.author.name;
     bookElement.dataset.info = book.info;
     bookElement.dataset.price = book.price;
 
+    const bookCover = document.createElement('img');
     bookCover.setAttribute('src', book.cover.small);
     bookElement.appendChild(bookCover);
+
     this.container.appendChild(bookElement);
   }
 
   render() {
-    this.bookList.forEach(this.renderBook.bind(this));
+    this.books.forEach(this.renderBook.bind(this));
   }
 }
 

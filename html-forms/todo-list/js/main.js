@@ -1,55 +1,50 @@
 'use strict';
 
-class List {
+class TodoList {
   constructor(container) {
     if (!(container instanceof Element)) {
       return;
     }
-    
-    this.container = container;
 
-    this.isChecked = false;
     this.counter = 0;
     this.total = 0;
 
-    this.container.addEventListener('change', this.taskChanged.bind(this));
+    this.container = container;
+    this.output = this.container.querySelector('output');
 
     this.init();
   }
 
   init() {
-    const inputs = this.container.querySelectorAll('input');
-    inputs.forEach(input => {
-      if (input.type === 'checkbox') {
-        this.total++;
-      }
+    const fields = this.container.querySelectorAll('input[type="checkbox"]');
+    this.total = fields.length;
+    this.counter = Array.prototype.reduce.call(
+      fields,
+      (counter, field) => counter + Number(field.checked),
+      0,
+    );
 
-      if (input.type === 'checkbox' && input.checked) {
-        this.counter++;
-      }
-    });
+    this.container.addEventListener('change', this.handleChange.bind(this));
 
-    this.setOutput();
+    this.render();
   }
 
-  taskChanged(event) {
-    this.isChecked = event.target.checked;
-    this.isChecked ? this.counter++ : this.counter--;
-    
-    this.setOutput();
-    this.isCompleted();
+  handleChange(event) {
+    if (event.target.checked) {
+      this.counter++;
+    } else {
+      this.counter--;
+    }
+
+    this.render();
   }
 
-  isCompleted() {
-    (this.counter === this.total) ?  this.container.classList.add('complete') : this.container.classList.remove('complete');
-  }
-
-  setOutput() {
-    const output = this.container.querySelector('output');
-    output.value = `${this.counter} из ${this.total}`
+  render() {
+    this.output.value = `${this.counter} из ${this.total}`;
+    this.container.classList.toggle('complete', this.counter === this.total);
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    new List(document.querySelector('.list-block'))
+    new TodoList(document.querySelector('.list-block'))
 });

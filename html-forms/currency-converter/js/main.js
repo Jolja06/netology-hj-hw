@@ -6,56 +6,44 @@ class Converter {
       return;
     }
 
-    this.container = container;
-    this.currency = [];
-    this.input = this.container.querySelector('#source');
-    this.amount = this.input.value;
-    this.from = this.container.querySelector('#from');
-    this.loader = document.querySelector('#loader');
-    this.output = this.container.querySelector('#result');
-    this.selects = this.container.querySelectorAll('select');
-    this.to = this.container.querySelector('#to');
+    this.currencies = [];
     this.url = url;
     this.xhr = new XMLHttpRequest();
 
-    this.xhr.addEventListener('load', this.handleLoad.bind(this));
-    this.input.addEventListener('input', this.handleConversion.bind(this));
-    this.from.addEventListener('change', this.handleConversion.bind(this));
-    this.to.addEventListener('change', this.handleConversion.bind(this));
+    this.container = container;
+    this.loader = document.querySelector('#loader');
+    this.input = this.container.querySelector('#source');
+    this.output = this.container.querySelector('#result');
+    this.from = this.container.querySelector('#from');
+    this.to = this.container.querySelector('#to');
 
+    this.init();
+  }
+
+  init() {
+    this.input.addEventListener('input', this.calculate.bind(this));
+    this.from.addEventListener('change', this.calculate.bind(this));
+    this.to.addEventListener('change', this.calculate.bind(this));
+    this.xhr.addEventListener('load', this.handleLoad.bind(this));
+
+    this.toggleLoader(true);
     this.fetchContent();
+  }
+
+  calculate() {
+    this.output.value = (this.input.value * this.from.value / this.to.value).toFixed(2);
   }
 
   fetchContent() {
     this.xhr.open('GET', this.url, true);
     this.xhr.send();
-    this.toggleLoader(true);
-  }
-
-  handleConversion() {
-    this.amount = this.input.value;
-    this.output.value = (this.from.value * this.amount / this.to.value).toFixed(2);
   }
 
   handleLoad() {
-    this.currency = JSON.parse(this.xhr.responseText);
+    this.currencies = JSON.parse(this.xhr.responseText);
     this.toggleLoader(false);
     this.render();
-  }
-
-  renderCurrency(currency) {
-    this.selects.forEach(select => {
-      const option = document.createElement('option');
-      option.value = currency.value;
-      option.label = currency.code;
-      option.title = currency.title;
-      select.appendChild(option);
-    });
-    this.handleConversion();
-  }
-
-  render() {
-    this.currency.forEach(this.renderCurrency.bind(this));
+    this.calculate();
   }
 
   toggleLoader(isForce) {
@@ -63,6 +51,15 @@ class Converter {
     this.loader.classList.toggle('hidden', !isForce);
   }
 
+  render() {
+    [this.from, this.to].forEach(select => this.currencies.forEach(currency => {
+      const option = document.createElement('option');
+      option.value = currency.value;
+      option.label = currency.code;
+      option.title = currency.title;
+      select.appendChild(option);
+    }));
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

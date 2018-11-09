@@ -1,71 +1,73 @@
 'use strict';
 
 class Feedback {
-  constructor(form, popup) {
-    if (!(form instanceof Element) && !(popup instanceof Element)) {
+  constructor(form, output) {
+    if (!(form instanceof Element) && !(output instanceof Element)) {
       return;
     }
 
-    this.form = form;
-    this.popup = popup;
-    this.inputs = {};
-    this.isSubmited = false;
-    this.form.querySelectorAll('input, textarea').forEach(field => field.addEventListener('input', this.handleChange.bind(this, field.name)));
-    this.form.querySelector('button').addEventListener('click', this.submitForm.bind(this));
-    this.popup.querySelector('button').addEventListener('click', this.submitForm.bind(this));
-    document.getElementsByName('zip')[0].addEventListener('keydown', this.handleInputNumbers.bind(this));
-    document.getElementsByName('phone')[0].addEventListener('keydown', this.handleInputNumbers.bind(this));
+    this.values = {};
 
-    this.createObj();
+    this.form = form;
+    this.output = output;
+
+    this.init();
+  }
+
+  init() {
+    this.form.querySelectorAll('input, textarea').forEach(field => {
+      const name = field.name;
+      this.values[name] = field.value;
+      field.addEventListener('input', this.handleChange.bind(this, name));
+
+      if (['phone', 'zip'].includes(name)) {
+        field.addEventListener('keydown', this.filterKeys.bind(this));
+      }
+    });
+
+    this.form.querySelector('button').addEventListener('click', () => this.submitForm(event, true));
+    this.output.querySelector('button').addEventListener('click', () => this.submitForm(event, false));
+
   }
 
   handleChange(name) {
-    this.inputs[name] = event.target.value;
-    this.checkCompleted();
+    this.values[name] = event.target.value;
+    this.render();
   }
 
-  handleInputNumbers(event) {
+  filterKeys(event) {
     if (/^Key/.test(event.code)) {
       event.preventDefault();
     }
   }
 
+  submitForm(event, isForce) {
+    event.preventDefault();
 
-  createObj() {
-    this.form.querySelectorAll('input, textarea').forEach(field => {
-      this.inputs[field.name] = undefined;
-      this.inputs.isComplete = false;
+    Object.keys(this.values).forEach(name => {
+      const output = this.output.querySelector(`output#${name}`);
+      if (output) {
+        output.value = this.values[name];
+      }
     });
 
-  }
-
-  checkCompleted() {
-    for(let key in this.inputs) {
-      (this.inputs[key] !== '' && this.inputs[key] !== undefined) ? this.inputs.isComplete = true : this.inputs.isComplete = false;
-    }
-    this.inputs.isComplete ? this.form.querySelector('button').disabled = false : this.form.querySelector('button').disabled = true;
-  }
-
-  outputMessage() {
-    this.popup.querySelectorAll('output').forEach(output => {
-      output.value = this.inputs[output.id];
-    })
-  }
-
-  submitForm(event) {
-    event.preventDefault();
-    this.isSubmited = !this.isSubmited;
-    this.outputMessage();
-    this.toggle(this.isSubmited);
-  }
-
-  toggle(isForce) {
-    this.popup.classList.toggle('hidden', !isForce);
     this.form.classList.toggle('hidden', isForce);
+    this.output.classList.toggle('hidden', !isForce);
+  }
+
+  isValid() {
+    return !Object.values(this.values).some(value => value === '');
+  }
+
+  render() {
+    this.form.querySelector('button').disabled = !this.isValid();
   }
 
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  new Feedback(document.querySelector('.contentform'), document.querySelector('#output'));
+  new Feedback(
+    document.querySelector('.contentform'),
+    document.querySelector('#output')
+  );
 });

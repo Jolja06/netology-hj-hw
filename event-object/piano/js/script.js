@@ -24,6 +24,7 @@ class Piano {
 
     this.index = null;
     this.isPlaying = false;
+    this.isShiftPressed = false;
     this.lastOctaveKey = null;
     this.octaves = octaves;
 
@@ -40,7 +41,7 @@ class Piano {
   }
 
   handleSetOctave(event) {
-    if (!this.isPlaying) {
+    if (!this.isPlaying || (event.key === 'Shift' && this.isShiftPressed)) {
       return;
     }
 
@@ -52,6 +53,7 @@ class Piano {
       case Keys.SHIFT:
         this.setAudio(Octaves.LOWER);
         this.lastOctaveKey = Keys.SHIFT;
+        this.isShiftPressed = true;
         break;
       default:
         break;
@@ -66,6 +68,10 @@ class Piano {
     if (this.lastOctaveKey === event.key) {
       this.setAudio(Octaves.MIDDLE);
       this.lastOctaveKey = null;
+    }
+
+    if (event.key === 'Shift') {
+      this.isShiftPressed = false;
     }
   }
 

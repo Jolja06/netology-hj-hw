@@ -1,45 +1,68 @@
 'use strict';
 
 class Slider {
-  constructor(slider) {
-    if (!(slider instanceof Element)) {
+  constructor(container) {
+    if (!(container instanceof Element)) {
       return;
     }
-    this.slider = slider;
-    this.nav = this.slider.querySelector('nav');
-    this.controls = this.nav.children;
-    this.container = this.slider.querySelector('.slides');
+    this.container = container;
+    this.slider = this.container.querySelector('.slides');
+    this.nav = this.container.querySelector('nav');
+    this.firstSlide = this.nav.querySelector('[data-action="first"]');
+    this.nextSlide = this.nav.querySelector('[data-action="next"]');
+    this.prevSlide = this.nav.querySelector('[data-action="prev"]');
+    this.lastSlide = this.nav.querySelector('[data-action="last"]');
 
-    this.nav.addEventListener('click', this.moveSlide.bind(this));
     this.init();
+
+    this.nav.addEventListener('click', event => this.handleMoveSlide(event, event.target));
   }
 
   init() {
-    this.container.firstElementChild.classList.add('slide-current');
+    this.slider.firstElementChild.classList.add('slide-current');
+    this.prevSlide.classList.add('disabled');
+    this.firstSlide.classList.add('disabled');
   }
 
-  moveSlide(event) {
-    const current = this.container.querySelector('.slide-current');
-    switch (event.target.dataset.action) {
-      case 'next':
-        current.classList.remove('slide-current');
-        current.nextElementSibling.classList.add('slide-current');
+  handleMoveSlide(event, target) {
+    if (target.classList.contains('disabled')) {
+      event.preventDefault();
+    }
+    const currentSlide = this.slider.querySelector('.slide-current');
+    let activatedSlide;
 
-        break;
-      case 'prev':
-        current.classList.remove('slide-current');
-        current.previousElementSibling.classList.add('slide-current');
-        break;
-      case 'first':
-        current.classList.remove('slide-current');
-        current.parentNode.firstElementChild.classList.add('slide-current');
+    switch (target.dataset.action) {
+      case 'next':
+        activatedSlide = currentSlide.nextElementSibling;
         break;
       case 'last':
-        current.classList.remove('slide-current');
-        current.parentNode.lastElementChild.classList.add('slide-current');
+        activatedSlide = currentSlide.parentNode.lastElementChild;
+        break;
+      case 'prev':
+        activatedSlide = currentSlide.previousElementSibling;
+        break;
+      case 'first':
+        activatedSlide = currentSlide.parentNode.firstElementChild;
         break;
     }
+    this.setCurrent(currentSlide, activatedSlide);
+    this.disabledControl(activatedSlide);
+
+
+
   }
+
+  setCurrent(current, activated) {
+    current.classList.remove('slide-current');
+    activated.classList.add('slide-current');
+  }
+  disabledControl(activated) {
+    this.firstSlide.classList.toggle('disabled', !activated.previousElementSibling);
+    this.prevSlide.classList.toggle('disabled', !activated.previousElementSibling);
+    this.lastSlide.classList.toggle('disabled', !activated.nextElementSibling);
+    this.nextSlide.classList.toggle('disabled', !activated.nextElementSibling);
+  }
+
 }
 
 

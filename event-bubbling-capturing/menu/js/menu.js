@@ -1,7 +1,8 @@
 'use strict';
 
 function toggleMenu(event) {
-  if (this.classList.contains('show')) {
+  const target = event.target;
+  if (target.closest('li').classList.contains('show')) {
     this.classList.remove('show');
     this.classList.add('hide');
   } else {
@@ -11,6 +12,7 @@ function toggleMenu(event) {
 }
 
 function openLink(event) {
+  event.preventDefault();
   console.log(this.textContent);
 }
 

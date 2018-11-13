@@ -1,29 +1,32 @@
 'use strict';
 
 class TodoList {
-  constructor(list) {
-    if (!(list instanceof Element)) {
+  constructor(container) {
+    if (!(container instanceof Element)) {
       return;
     }
 
-    this.list = list;
+    this.container = container;
+    this.doneList = this.container.querySelector('.done');
+    this.todoList = this.container.querySelector('.undone');
     
-    this.list.addEventListener('change', (event) => this.handleChange(event.target));
+    this.container.addEventListener('change', this.handleChange.bind(this));
 
   }
 
-  handleChange(target) {
-    target.checked ? this.handleDone(target) : this.handleUndone(target);
+  handleChange(event) {
+    const target = event.target;
+
+    if (target.tagName !== 'INPUT') {
+      return;
+    }
+
+    this.toggle(target.parentNode, target.checked);
   }
 
-  handleUndone(task) {
-    const undone = this.list.querySelector('.undone');
-    undone.appendChild(task.parentNode);
-  }
-
-  handleDone(task) {
-    const done = this.list.querySelector('.done');
-    done.appendChild(task.parentNode);
+  toggle(task, isDone) {
+    const targetList = isDone ? this.doneList : this.todoList;
+    targetList.appendChild(task);
   }
 }
 

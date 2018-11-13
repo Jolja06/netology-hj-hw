@@ -6,50 +6,57 @@ class Tabs {
       return;
     }
 
+    this.index = 0;
+
     this.container = container;
-    this.nav = this.container.querySelector('.tabs-nav');
-    this.content = this.container.querySelector('.tabs-content');
-    this.sample = this.nav.firstElementChild;
-    this.nav.addEventListener('click', this.handleSetActive.bind(this));
+    this.navigation = this.container.querySelector('.tabs-nav');
+    this.articles = Array.prototype.slice.call(this.container.querySelectorAll('[data-tab-title]'));
+    this.tabs = [];
 
     this.init();
   }
 
   init() {
-    this.fetchContent();
-    this.sample.parentNode.removeChild(this.sample);
-    this.nav.firstElementChild.classList.add('ui-tabs-active');
-    Array.from(this.content.children).forEach(article => {
-      article.classList.add('hidden');
-      article.parentNode.firstElementChild.classList.remove('hidden');
-    })
+    this.initTabs();
+    this.render();
+
+    this.navigation.addEventListener('click', this.handleNavigate.bind(this));
   }
 
-  fetchContent() {
-    const navs = this.content.children;
-    Array.from(navs).forEach(nav => {
-      this.createNav(nav.dataset.tabTitle, nav.dataset.tabIcon)
+  initTabs() {
+    const sampleTab  = this.navigation.firstElementChild;
+    this.navigation.innerHTML = '';
+
+    this.articles.forEach((article, index) => {
+      const tab = sampleTab.cloneNode(true);
+      tab.firstElementChild.classList.add(article.dataset.tabIcon);
+      tab.firstElementChild.innerHTML = article.dataset.tabTitle;
+      tab.dataset.index = index;
+      this.tabs.push(tab);
+      this.navigation.appendChild(tab);
     });
   }
 
-  createNav(title, icon) {
-    const template = this.sample.cloneNode(true);
-    template.firstElementChild.classList.add(icon);
-    template.firstElementChild.innerText = title;
-    this.nav.appendChild(template);
+  handleNavigate(event) {
+    const item = event.target.closest('li');
+    if (!item) {
+      return;
+    }
 
+    this.index = item.dataset.index;
+    this.render();
   }
 
-  handleSetActive(event) {
-    const activeTab = event.target.classList[1];
-    Array.from(this.nav.children).forEach(control => {
-      control.classList.remove('ui-tabs-active');
+  render() {
+    this.tabs.forEach((tab) => {
+      tab.classList.remove('ui-tabs-active');
     });
-    event.target.parentNode.classList.add('ui-tabs-active');
-    Array.from(this.content.children).forEach(article => {
+    this.tabs[this.index].classList.add('ui-tabs-active');
+
+    this.articles.forEach((article) => {
       article.classList.add('hidden');
-      article.dataset.tabIcon === activeTab ? article.classList.remove('hidden') : '';
-    })
+    });
+    this.articles[this.index].classList.remove('hidden');
   }
 }
 

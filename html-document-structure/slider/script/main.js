@@ -5,68 +5,73 @@ class Slider {
     if (!(container instanceof Element)) {
       return;
     }
+
+    this.index = 0;
+
     this.container = container;
-    this.slider = this.container.querySelector('.slides');
-    this.nav = this.container.querySelector('nav');
-    this.firstSlide = this.nav.querySelector('[data-action="first"]');
-    this.nextSlide = this.nav.querySelector('[data-action="next"]');
-    this.prevSlide = this.nav.querySelector('[data-action="prev"]');
-    this.lastSlide = this.nav.querySelector('[data-action="last"]');
+    this.navigation = this.container.querySelector('nav');
+    this.navigationPrev = this.navigation.querySelector('a[data-action="prev"]');
+    this.navigationNext = this.navigation.querySelector('a[data-action="next"]');
+    this.navigationFirst = this.navigation.querySelector('a[data-action="first"]');
+    this.navigationLast = this.navigation.querySelector('a[data-action="last"]');
+    this.slides = Array.prototype.slice.call(this.container.querySelectorAll('.slide'));
 
     this.init();
-
-    this.nav.addEventListener('click', event => this.handleMoveSlide(event, event.target));
   }
 
   init() {
-    this.slider.firstElementChild.classList.add('slide-current');
-    this.prevSlide.classList.add('disabled');
-    this.firstSlide.classList.add('disabled');
+    this.navigation.addEventListener('click', this.handleNavigate.bind(this));
+
+    this.render();
   }
 
-  handleMoveSlide(event, target) {
+  handleNavigate(event) {
+    const target = event.target;
     if (target.classList.contains('disabled')) {
-      event.preventDefault();
+      return;
     }
-    const currentSlide = this.slider.querySelector('.slide-current');
-    let activatedSlide;
 
-    switch (target.dataset.action) {
+    const action = target.dataset.action;
+    switch (action) {
       case 'next':
-        activatedSlide = currentSlide.nextElementSibling;
-        break;
-      case 'last':
-        activatedSlide = currentSlide.parentNode.lastElementChild;
+        this.index = this.index + 1;
         break;
       case 'prev':
-        activatedSlide = currentSlide.previousElementSibling;
+        this.index = this.index - 1;
+        break;
+      case 'last':
+        this.index = this.slides.length - 1;
         break;
       case 'first':
-        activatedSlide = currentSlide.parentNode.firstElementChild;
+        this.index = 0;
+        break;
+      default:
         break;
     }
-    this.setCurrent(currentSlide, activatedSlide);
-    this.disabledControl(activatedSlide);
 
-
-
+    this.render();
   }
 
-  setCurrent(current, activated) {
-    current.classList.remove('slide-current');
-    activated.classList.add('slide-current');
-  }
-  disabledControl(activated) {
-    this.firstSlide.classList.toggle('disabled', !activated.previousElementSibling);
-    this.prevSlide.classList.toggle('disabled', !activated.previousElementSibling);
-    this.lastSlide.classList.toggle('disabled', !activated.nextElementSibling);
-    this.nextSlide.classList.toggle('disabled', !activated.nextElementSibling);
+  render() {
+    const isFirstSlide = this.index === 0;
+    const isLastSlide = this.index === this.slides.length - 1;
+    this.navigationPrev.classList.toggle('disabled', isFirstSlide);
+    this.navigationNext.classList.toggle('disabled', isLastSlide);
+    this.navigationFirst.classList.toggle('disabled', isFirstSlide);
+    this.navigationLast.classList.toggle('disabled', isLastSlide);
+
+    this.slides.forEach((slide) => {
+      slide.classList.remove('slide-current');
+    });
+
+    const currentSlide = this.slides[this.index];
+    if (currentSlide) {
+      currentSlide.classList.add('slide-current');
+    }
   }
 
 }
 
-
 document.addEventListener('DOMContentLoaded', () => {
-  const sliders = document.querySelectorAll('.slider');
-  Array.from(sliders).forEach(slider => new Slider(slider));
+  new Slider(document.querySelector('.slider'));
 });

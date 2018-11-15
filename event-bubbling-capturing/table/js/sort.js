@@ -1,12 +1,15 @@
 'use strict';
-let isSorted = false;
+
 function handleTableClick(event) {
   const target = event.target;
-  if (target.dataset.propName) {
-    target.dataset.dir = !(isSorted) ? -1 : 1;
-    isSorted = !isSorted;
+  const propName = target.dataset.propName;
+  if (!propName) {
+    return;
   }
-  target.closest('table').dataset.sortBy = target.dataset.propName;
+  const dir = target.dataset.dir;
+  const isSorted = !dir || dir === '-1' ? 1 : -1;
+  target.dataset.dir = isSorted;
+  target.closest('table').dataset.sortBy = propName;
 
-  sortTable(target.dataset.propName, target.dataset.dir);
+  sortTable(propName, isSorted);
 }

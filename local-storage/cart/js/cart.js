@@ -8,14 +8,16 @@ class Cart {
 
     this.product = product;
     this.url = url;
-
+    this.button = this.product.querySelector('#AddToCart');
+    this.total = 0;
     this.init();
   }
 
   init() {
     this.fetchColors();
     this.fetchSizes();
-    this.render();
+    this.button.addEventListener('click', this.handleAddToCart.bind(this));
+    this.renderCart();
   }
 
   fetchColors() {
@@ -43,6 +45,90 @@ class Cart {
       .then((data) => this.renderSize(data))
       .catch((error) => console.error(error));
   }
+
+  handleAddToCart(event) {
+    event.preventDefault();
+    const form = event.target.closest('form');
+    let data = new FormData(form);
+    data.append("productId", form.dataset.productId);
+    
+    fetch(this.url, {
+      body: data,
+      credentials: 'same-origin',
+      method: 'POST',
+    })
+    .then((response) => {
+        if (response.status >= 200 && response.status < 400) {
+          return response;
+        }
+        throw new Error(response.statusText);
+    })
+    .then((responce) => responce.json())
+    .then((data) => this.updateProductToCart(data, 'add'))
+    .catch((error) => console.error(error));
+  }
+  
+  handleRemove(event) {
+    event.preventDefault();
+    let data = new FormData();
+    data.append("productId", event.target.dataset.id);
+
+    fetch(this.url + '/remove', {
+      body: data,
+      credentials: 'same-origin',
+      method: 'POST',
+    })
+    .then((response) => {
+        if (response.status >= 200 && response.status < 400) {
+          return response;
+        }
+        throw new Error(response.statusText);
+    })
+    .then((responce) => responce.json())
+    .then((data) => this.updateProductToCart(data, 'remove'))
+    .catch((error) => console.error(error));
+  }
+
+  updateProductToCart(items) {
+    const goods = document.querySelector('#quick-cart');
+    let price = 0;
+    let quantity = 0;
+    const template = `
+      ${items.map((item) => {
+        quantity = item.quantity;
+        price = item.price;
+        return `
+        <div class="quick-cart-product quick-cart-product-static" id="quick-cart-product-${item.productId}" style="opacity: 1;">
+          <div class="quick-cart-product-wrap">
+            <img src="${item.pic}" title="${item.title}">
+            <span class="s1" style="background-color: #000; opacity: .5">$${item.price}.00</span>
+            <span class="s2"></span>
+          </div>
+          <span class="count hide fadeUp" id="quick-cart-product-count-${item.productId}">${item.quantity}</span>
+          <span class="quick-cart-product-remove remove" data-id="${item.id}"></span>
+        </div>
+
+      `}).join('')}
+    `;
+    goods.innerHTML = template + this.renderCart(price, quantity);
+    const remove = document.querySelector('.remove');
+    remove.addEventListener('click', this.handleRemove.bind(this));
+
+  }
+
+  renderCart(price = 0, quantity = 0) {
+    const goods = document.querySelector('#quick-cart');
+    const cart = `
+      <a id="quick-cart-pay" quickbeam="cart-pay" class="cart-ico ${quantity !== 0 ? 'open' : ''}">
+        <span>
+          <strong class="quick-cart-text">Оформить заказ<br></strong>
+          <span id="quick-cart-price">${price*quantity}.00</span>
+        </span>
+      </a>
+    `
+    goods.innerHTML = cart;
+    return cart;
+  }
   
   renderColor(colors) {
     const markup = document.querySelector('#colorSwatch');
@@ -65,7 +151,6 @@ class Cart {
 
   renderSize(sizes) {
     const container = document.querySelector('#sizeSwatch');
-
     const template = `
       ${sizes.map((size, index) => `
         <div data-value="${size.type}" class="swatch-element plain ${size.type} ${size.isAvailable ? 'available' : 'soldout'}">
@@ -79,9 +164,6 @@ class Cart {
     `;
 
     container.innerHTML = `<div class="header">Размер</div>` + template;
-  }
-
-  render() {
   }
 }
 

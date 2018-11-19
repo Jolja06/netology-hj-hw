@@ -5,35 +5,42 @@ class Counter {
     if (!(container instanceof Element)) {
       return;
     }
-    this.count = localStorage.count;
-    this.container = container;
-    this.view = this.container.querySelector('#counter');
-    this.buttons = this.container.querySelector('.wrap-btns');
+    this.count = localStorage.count ? Number(localStorage.count) : 0;
+
+    this.view = container.querySelector('#counter');
+    this.controls = container.querySelector('.wrap-btns');
 
     this.init();
   }
 
   init() {
-    this.buttons.addEventListener('click', this.handleChange.bind(this));
+    this.controls.addEventListener('click', this.handleChange.bind(this));
     this.render();
   }
 
   handleChange(event) {
     const target = event.target;
+    if (target.tagName !== 'BUTTON') {
+      return;
+    }
+
     switch (target.id) {
       case 'increment' :
-        this.count = localStorage.count = +this.count + 1;
+        this.count++;
         break;
       case 'decrement' :
-        this.count = localStorage.count = +this.count - 1;
+        if (this.count > 0) {
+          this.count--;
+        }
         break;
       case 'reset' :
-        this.count = localStorage.count = '0';
+        this.count = 0;
         break;
 
       default:
         break;
     }
+    localStorage.count = this.count;
     this.render();
   }
 

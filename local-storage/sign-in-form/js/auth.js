@@ -7,52 +7,52 @@ class Auth {
       return;
     }
 
-    this.form = form;
-    this.url = url;
     this.action = action;
-    this.button = this.form.querySelector('.button');
-    this.data = {};
+    this.url = url;
+
+    this.form = form;
     this.output = this.form.querySelector('output');
 
-    this.init();
-
-  }
-
-  init() {
-    this.button.addEventListener('click', this.handleSubmit.bind(this));
+    this.form.addEventListener('submit', this.handleSubmit.bind(this));
   }
 
   handleSubmit(event) {
     event.preventDefault();
-    this.fetchData();
-    fetch(this.url, {
-      body: JSON.stringify(this.data),
-      credentials: 'same-origin',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-    }).then((response) => {
-      if (response.status >= 200 && response.status < 400) {
-        return response;
+
+    fetch(
+      this.url,
+      {
+        body: JSON.stringify(this.getData()),
+        credentials: 'same-origin',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
       }
-      throw new Error(response.statusText);
-    }).then((response) => response.json()
-    ).then((data) => {
-      if (!data.error) {
-        return this.output.innerHTML = `Пользователь ${data.name} успешно ${this.action}`
-      }
-      throw data.message;
-    }).catch((err) => {
-      this.output.innerText = err;
-    });
+    )
+      .then((response) => {
+        if (response.status < 200 && response.status >= 400) {
+          throw new Error(response.statusText);
+        }
+      return response.json();
+    })
+      .then((data) => {
+        if (data.error) {
+          throw new Error(data.message);
+        }
+        this.output.innerHTML = `Пользователь ${data.name} успешно ${this.action}`
+    })
+      .catch((err) => {
+        this.output.innerText = err.message;
+      });
   }
 
-  fetchData() {
-    const getData = new FormData(this.form);
-    for (const [input, value] of getData) {
-      this.data[input] = value;
+  getData() {
+    const data = {};
+    for (const [input, value] of new FormData(this.form)) {
+      data[input] = value;
     }
+    return data;
   }
 }
 
@@ -61,20 +61,15 @@ const dictionary = {
   signup: 'зарегистрирован',
 };
 
-const signin = new Auth(
-  document.querySelector('.sign-in-htm'),
-  'https://neto-api.herokuapp.com/signin',
-  dictionary.signin,
-);
-
-const signup = new Auth(
-  document.querySelector('.sign-up-htm'),
-  'https://neto-api.herokuapp.com/signup',
-  dictionary.signup,
-);
-
 document.addEventListener('DOMContentLoaded', () => {
-  signin;
-  signup;
-
+  new Auth(
+    document.querySelector('.sign-in-htm'),
+    'https://neto-api.herokuapp.com/signin',
+    dictionary.signin,
+  );
+  new Auth(
+    document.querySelector('.sign-up-htm'),
+    'https://neto-api.herokuapp.com/signup',
+    dictionary.signup,
+  );
 });

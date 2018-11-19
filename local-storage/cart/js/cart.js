@@ -1,103 +1,94 @@
 'use strict';
-const isURL = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+
+const URL = 'https://neto-api.herokuapp.com/cart';
+
 class Cart {
-  constructor(product, url) {
-    if (!(product instanceof Element) || !(isURL.test(url))) {
+  constructor(container) {
+    if (!(container instanceof Element)) {
       return;
     }
 
-    this.product = product;
-    this.url = url;
-    this.button = this.product.querySelector('#AddToCart');
     this.total = 0;
+    this.container = container;
+    this.form = this.container.querySelector('form');
+    
     this.init();
   }
 
   init() {
-    this.fetchColors();
-    this.fetchSizes();
-    this.button.addEventListener('click', this.handleAddToCart.bind(this));
-    this.renderCart();
-  }
-
-  fetchColors() {
-    fetch(this.url + '/colors')
-      .then((response) => {
-      if (response.status >= 200 && response.status < 400) {
-        return response;
-      }
-      throw new Error(response.statusText);
-      })
-      .then((response) => response.json())
-      .then((data) => this.renderColor(data))
-      .catch((error) => console.error(error));
+    this.handleAdd = this.handleAdd.bind(this);
+    this.handleRemove = this.handleRemove.bind(this);
+    
+    const buttonAdd = this.container.querySelector('#AddToCart');
+    buttonAdd.addEventListener('click', this.handleAdd.bind(this));
+    
+    return Promise.all([
+      this.fetch(`${URL}/colors`),
+      this.fetch(`${URL}/sizes`),
+      this.fetch(URL),
+    ])
+      .then((data) => {
+        this.renderColor(data[0]);
+        this.renderSize(data[1]);
+        this.renderCart(data[2]);
+      });
   }
   
-  fetchSizes() {
-    fetch(this.url + '/sizes')
-      .then((response) => {
-        if (response.status >= 200 && response.status < 400) {
-          return response;
-        }
-        throw new Error(response.statusText);
-      })
-      .then((response) => response.json())
-      .then((data) => this.renderSize(data))
-      .catch((error) => console.error(error));
-  }
-
-  handleAddToCart(event) {
-    event.preventDefault();
-    const form = event.target.closest('form');
-    let data = new FormData(form);
-    data.append("productId", form.dataset.productId);
-    
-    fetch(this.url, {
+  fetch(url, method = 'GET', data) {
+    return fetch(url, {
       body: data,
       credentials: 'same-origin',
-      method: 'POST',
+      method,
     })
-    .then((response) => {
+      .then((response) => {
         if (response.status >= 200 && response.status < 400) {
-          return response;
+          return response.json();
         }
+      
         throw new Error(response.statusText);
-    })
-    .then((responce) => responce.json())
-    .then((data) => this.updateProductToCart(data, 'add'))
-    .catch((error) => console.error(error));
+      })
+      .catch(console.error);
+  }
+  
+  handleAdd(event) {
+    event.preventDefault();
+    
+    const data = new FormData(this.form);
+    data.append('productId', this.form.dataset.productId);
+    
+    this.fetch(URL, 'POST', data)
+      .then((data) => this.renderCart(data));
   }
   
   handleRemove(event) {
     event.preventDefault();
-    let data = new FormData();
-    data.append("productId", event.target.dataset.id);
-
-    fetch(this.url + '/remove', {
-      body: data,
-      credentials: 'same-origin',
-      method: 'POST',
-    })
-    .then((response) => {
-        if (response.status >= 200 && response.status < 400) {
-          return response;
-        }
-        throw new Error(response.statusText);
-    })
-    .then((responce) => responce.json())
-    .then((data) => this.updateProductToCart(data, 'remove'))
-    .catch((error) => console.error(error));
+    
+    const data = new FormData(this.form);
+    data.append('productId', this.form.dataset.productId);
+    
+    this.fetch(`${URL}/remove`, 'POST', data)
+      .then((data) => this.renderCart(data));
   }
-
-  updateProductToCart(items) {
-    const goods = document.querySelector('#quick-cart');
-    let price = 0;
-    let quantity = 0;
-    const template = `
-      ${items.map((item) => {
-        quantity = item.quantity;
-        price = item.price;
-        return `
+  
+  renderCart(items) {    
+    const markup = document.querySelector('#quick-cart');
+    
+    if (!items || !items.length) {
+      markup.innerHTML = '';
+      return;
+    }
+    
+    const sum = items.reduce((acc, item) => {
+      const {
+        price,
+        quantity,
+      } = item;
+      
+      return acc + quantity * price;
+    }, 0);
+    
+    const products = `
+      ${items.map(item => (`
         <div class="quick-cart-product quick-cart-product-static" id="quick-cart-product-${item.productId}" style="opacity: 1;">
           <div class="quick-cart-product-wrap">
             <img src="${item.pic}" title="${item.title}">
@@ -108,30 +99,26 @@ class Cart {
           <span class="quick-cart-product-remove remove" data-id="${item.id}"></span>
         </div>
 
-      `}).join('')}
+      `)).join('')}
     `;
-    goods.innerHTML = template + this.renderCart(price, quantity);
-    const remove = document.querySelector('.remove');
-    remove.addEventListener('click', this.handleRemove.bind(this));
-
-  }
-
-  renderCart(price = 0, quantity = 0) {
-    const goods = document.querySelector('#quick-cart');
+    
     const cart = `
-      <a id="quick-cart-pay" quickbeam="cart-pay" class="cart-ico ${quantity !== 0 ? 'open' : ''}">
+      <a id="quick-cart-pay" quickbeam="cart-pay" class="cart-ico ${sum ? 'open' : ''}">
         <span>
           <strong class="quick-cart-text">Оформить заказ<br></strong>
-          <span id="quick-cart-price">${price*quantity}.00</span>
+          <span id="quick-cart-price">${sum}.00</span>
         </span>
       </a>
-    `
-    goods.innerHTML = cart;
-    return cart;
+    `;
+    
+    markup.innerHTML = products + cart;
+    
+    const buttonRemove = document.querySelector('.remove');
+    buttonRemove.addEventListener('click', this.handleRemove.bind(this));
   }
   
   renderColor(colors) {
-    const markup = document.querySelector('#colorSwatch');
+    const markup = this.container.querySelector('#colorSwatch');
 
     const template = `
       ${colors.map((color, index) => `
@@ -150,7 +137,8 @@ class Cart {
   }
 
   renderSize(sizes) {
-    const container = document.querySelector('#sizeSwatch');
+    const markup = this.container.querySelector('#sizeSwatch');
+    
     const template = `
       ${sizes.map((size, index) => `
         <div data-value="${size.type}" class="swatch-element plain ${size.type} ${size.isAvailable ? 'available' : 'soldout'}">
@@ -163,12 +151,11 @@ class Cart {
       `).join('')}
     `;
 
-    container.innerHTML = `<div class="header">Размер</div>` + template;
+    markup.innerHTML = `<div class="header">Размер</div>` + template;
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  new Cart(
-    document.querySelector('.product-detail'),
-    'https://neto-api.herokuapp.com/cart')
+  new Cart(document.querySelector('.product-detail'));
 });
+

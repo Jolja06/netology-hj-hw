@@ -14,10 +14,7 @@ class Counter {
     this.errors = this.container.querySelector('.errors');
 
     this.connection.addEventListener('open', this.init.bind(this));
-
-    window.addEventListener('beforeunload', () => {
-      this.connection.addEventListener('close', this.handleClose.bind(this));
-    });
+    window.addEventListener('beforeunload', this.handleClose.bind(this));
   }
 
   init() {
@@ -30,8 +27,7 @@ class Counter {
     this.errors.innerHTML = data.errors;
   }
 
-  handleClose(event) {
-    this.render(event);
+  handleClose() {
     this.connection.close(1000);
   }
 }

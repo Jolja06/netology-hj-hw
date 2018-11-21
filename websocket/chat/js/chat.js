@@ -10,37 +10,57 @@ class Chat {
     this.container = container;
     this.content = container.querySelector('.messages-content');
     this.stauts = container.querySelector('.chat-status');
-    this.templates = container.querySelector('.messages-templates');
-    this.notification = this.templates.querySelector('.message.message-status');
+    this.templates = container.querySelector('.messages-templates').children;
     this.server = server;
-    this.connection = new WebSocket(this.server);
+    this.socket = new WebSocket(this.server);
     this.submit = container.querySelector('.message-submit');
+    this.form = container.querySelector('form');
 
-    this.connection.addEventListener('open', this.open.bind(this));
-    this.connection.addEventListener('message', this.message.bind(this));
+    this.socket.addEventListener('open', this.connection.bind(this));
+    this.socket.addEventListener('message', this.getMessage.bind(this));
+    this.socket.addEventListener('close', this.connection.bind(this));
+    this.form.addEventListener('submit', this.handleSubmit.bind(this));
+
   }
 
-  // open(event) {
-  //   this.stauts.innerHTML = this.stauts.dataset.online;
-  //   this.submit.removeAttribute('disabled');
-  //   const notifOnline = this.notification.cloneNode(true);
-  //   notifOnline.firstElementChild.textContent = 'Пользователь появился в сети';
-  //   this.content.appendChild(notifOnline);
-  // }
+  connection(event) {
+    this.stauts.innerHTML = (event.type === 'open') ? this.stauts.dataset.online : this.stauts.dataset.offline;
+    event.type === 'open' ? this.submit.removeAttribute('disabled') : this.submit.setAttribute('disabled');
+    const template = Array.from(this.templates)[3];
+    const status = template.cloneNode(true);
+    event.type === 'open' ? status.firstElementChild.textContent = 'Пользователь появился в сети' : 'Пользователь не в сети';
+    this.content.appendChild(status);
+  }
 
-  // message(event) {
-  //   const message = event.data;
-  //   if (message === '...') {
-  //     const typing = this.templates.querySelector('.message.loading').cloneNode(true);
-  //     this.content.appendChild(typing);
-  //   } else {
-  //     const messagePers = this.templates.querySelector('.message').cloneNode(true);
-  //     messagePers.textContent = message;
-  //     this.content.appendChild(messagePers);
-  //   }
 
-    
-  // }
+  getMessage(event) {
+    const message = event.data;
+    const template = Array.from(this.templates);
+    if (message === '...') {
+      const typing = template[0].cloneNode(true);
+      this.content.appendChild(typing);
+    } else {
+      const messagePers = template[1].cloneNode(true);
+      messagePers.querySelector('.message-text').textContent = message;
+      messagePers.querySelector('.timestamp').innerHTML = `${new Date().getHours()}:${new Date().getMinutes()}`;
+      this.content.appendChild(messagePers);
+    }
+
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+    const target = event.target;
+    let messageValue = target.querySelector('input');
+    const template = Array.from(this.templates)[2];
+    const message = template.cloneNode(true);
+    message.querySelector('.message-text').textContent = messageValue.value;
+    message.querySelector('.timestamp').innerHTML = `${new Date().getHours()}:${new Date().getMinutes()}`;
+    this.content.appendChild(message);
+    this.socket.send(messageValue.value);
+    messageValue.value = ''
+  }
+
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -48,4 +68,4 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.chat'),
     'wss://neto-api.herokuapp.com/chat'
   );
-})
+});

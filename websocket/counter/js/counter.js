@@ -1,17 +1,14 @@
 'use strict';
 
-const isServer = /^(wss?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
 class Counter {
-  constructor(container, server) {
-    if (!(container instanceof Element) || !(isServer.test(server))) {
+  constructor(container) {
+    if (!(container instanceof Element)) {
       return;
     }
 
-    this.container = container;
-    this.server = server;
-    this.connection = new WebSocket(this.server);
-    this.counter = this.container.querySelector('.counter');
-    this.errors = this.container.querySelector('.errors');
+    this.connection = new WebSocket('wss://neto-api.herokuapp.com/counter');
+    this.counter = container.querySelector('.counter');
+    this.errors = container.querySelector('.errors');
 
     this.connection.addEventListener('open', this.init.bind(this));
     window.addEventListener('beforeunload', this.handleClose.bind(this));
@@ -21,10 +18,11 @@ class Counter {
     this.connection.addEventListener('message', this.render.bind(this));
   }
 
-  render(event) {
-    const data = JSON.parse(event.data);
-    this.counter.innerHTML = data.connections;
-    this.errors.innerHTML = data.errors;
+  render({ data }) {
+    const parsedData = JSON.parse(data);
+
+    this.counter.innerHTML = parsedData.connections;
+    this.errors.innerHTML = parsedData.errors;
   }
 
   handleClose() {
@@ -33,8 +31,5 @@ class Counter {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  new Counter(
-    document.querySelector('.container'),
-    'wss://neto-api.herokuapp.com/counter'
-  );
+  new Counter(document.querySelector('.container'));
 });

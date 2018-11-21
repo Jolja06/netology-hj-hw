@@ -1,71 +1,70 @@
 'use strict';
 
-const isServer = /^(wss?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
 class Chat {
-  constructor(container, server) {
-    if (!(container instanceof Element) || !(isServer.test(server))) {
+  constructor(container) {
+    if (!(container instanceof Element)) {
       return;
     }
-
-    this.container = container;
+    
+    this.status = container.querySelector('.chat-status');
     this.content = container.querySelector('.messages-content');
-    this.stauts = container.querySelector('.chat-status');
-    this.templates = container.querySelector('.messages-templates').children;
-    this.server = server;
-    this.socket = new WebSocket(this.server);
-    this.submit = container.querySelector('.message-submit');
+    this.templates = Array.prototype.slice.call(container.querySelector('.messages-templates').children);
+    
     this.form = container.querySelector('form');
-
-    this.socket.addEventListener('open', this.connection.bind(this));
-    this.socket.addEventListener('message', this.getMessage.bind(this));
-    this.socket.addEventListener('close', this.connection.bind(this));
+    this.submit = this.form.querySelector('button');
     this.form.addEventListener('submit', this.handleSubmit.bind(this));
-
+    
+    this.connection = new WebSocket('wss://neto-api.herokuapp.com/chat');
+    this.connection.addEventListener('open', this.handleConnect.bind(this));
+    this.connection.addEventListener('message', this.handleMessageReceived.bind(this));
+    this.connection.addEventListener('close', this.handleConnect.bind(this));
   }
 
-  connection(event) {
-    this.stauts.innerHTML = (event.type === 'open') ? this.stauts.dataset.online : this.stauts.dataset.offline;
-    event.type === 'open' ? this.submit.removeAttribute('disabled') : this.submit.setAttribute('disabled');
-    const template = Array.from(this.templates)[3];
-    const status = template.cloneNode(true);
-    event.type === 'open' ? status.firstElementChild.textContent = 'Пользователь появился в сети' : 'Пользователь не в сети';
-    this.content.appendChild(status);
+  handleConnect({ type }) {
+    const isOpen = type === 'open';
+    
+    const { online, offline } = this.status.dataset;
+    this.status.innerHTML = isOpen ? online : offline;
+    this.submit.toggleAttribute('disabled', !isOpen);
+    
+    const template = this.templates[3].cloneNode(true);
+    template.firstElementChild.textContent = isOpen ? 'Пользователь появился в сети' : 'Пользователь не в сети';
+    this.content.appendChild(template);
   }
 
-
-  getMessage(event) {
-    const message = event.data;
-    const template = Array.from(this.templates);
+  handleMessageReceived({ data: message }) {
+    let template;
     if (message === '...') {
-      const typing = template[0].cloneNode(true);
-      this.content.appendChild(typing);
-    } else {
-      const messagePers = template[1].cloneNode(true);
-      messagePers.querySelector('.message-text').textContent = message;
-      messagePers.querySelector('.timestamp').innerHTML = `${new Date().getHours()}:${new Date().getMinutes()}`;
-      this.content.appendChild(messagePers);
+      template = this.templates[0].cloneNode(true);
+      this.content.appendChild(template);
+      
+      return;
     }
-
+    
+    template = this.templates[1].cloneNode(true);
+    template.querySelector('.message-text').textContent = message;
+    template.querySelector('.timestamp').innerHTML = `${new Date().getHours()}:${new Date().getMinutes()}`;
+    this.content.appendChild(template);
   }
 
   handleSubmit(event) {
     event.preventDefault();
-    const target = event.target;
-    let messageValue = target.querySelector('input');
-    const template = Array.from(this.templates)[2];
-    const message = template.cloneNode(true);
-    message.querySelector('.message-text').textContent = messageValue.value;
-    message.querySelector('.timestamp').innerHTML = `${new Date().getHours()}:${new Date().getMinutes()}`;
-    this.content.appendChild(message);
-    this.socket.send(messageValue.value);
-    messageValue.value = ''
+    
+    const { target } = event;
+    const input = target.querySelector('input');
+    const message = input.value;
+    input.value = '';
+    
+    const template = this.templates[2].cloneNode(true);
+    template.querySelector('.message-text').textContent = message;
+    template.querySelector('.timestamp').innerHTML = `${new Date().getHours()}:${new Date().getMinutes()}`;
+    this.content.appendChild(template);
+    
+    this.connection.send(message);
   }
-
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  new Chat(
-    document.querySelector('.chat'),
-    'wss://neto-api.herokuapp.com/chat'
-  );
+  new Chat(document.querySelector('.chat'));
 });
+

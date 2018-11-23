@@ -2,6 +2,10 @@
 
 class Widget {
 	constructor(container) {
+		if (!(container instanceof Element)) {
+			return;
+		}
+
 		this.url = 'https://neto-api.herokuapp.com/twitter/jsonp';
 
 		this.description = container.querySelector('[data-description]');

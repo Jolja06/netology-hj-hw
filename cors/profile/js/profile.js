@@ -8,6 +8,9 @@ class Profile {
 
     this.container = container;
     this.url = 'https://neto-api.herokuapp.com/profile/me';
+    this.callbackName = 'Profile' + Number(new Date());
+    this.fetchCounter = 0;
+
     this.description = container.querySelector('[data-description]');
     this.name = container.querySelector('[data-name]');
     this.pic = container.querySelector('[data-pic]');
@@ -42,10 +45,12 @@ class Profile {
 
   loadData(url) {
     return new Promise((done, fail) => {
-      window.callback = done;
+      this.fetchCounter++;
+      const callbackName = this.callbackName + this.fetchCounter;
+      window[callbackName] = done;
 
       const script = document.createElement('script');
-      script.src = url;
+      script.src = url + `?callback=${callbackName}`;
       document.getElementsByTagName('head')[0].appendChild(script);
     });
   }

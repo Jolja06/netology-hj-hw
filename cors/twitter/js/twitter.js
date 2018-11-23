@@ -6,6 +6,7 @@ class Widget {
 			return;
 		}
 
+    this.callbackName = 'handleDataForWidget' + Number(new Date());
 		this.url = 'https://neto-api.herokuapp.com/twitter/jsonp';
 
 		this.description = container.querySelector('[data-description]');
@@ -26,10 +27,10 @@ class Widget {
 
 	loadData() {
 		return new Promise((done, fail) => {
-			window.callback = done;
+      window[this.callbackName] = done;
 
-			const script = document.createElement('script');
-			script.src = this.url;
+      const script = document.createElement('script');
+			script.src = this.url + `?callback=${this.callbackName}`;
 			document.getElementsByTagName('head')[0].appendChild(script);
 		});
 	}

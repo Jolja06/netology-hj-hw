@@ -6,44 +6,35 @@ class Profile {
       return;
     }
 
-    this.container = container;
-    this.url = 'https://neto-api.herokuapp.com/profile/me';
+    /* Data. */
+    this.user = {};
+    this.userTechnologies = [];
+
+    /* Utils. */
+    this.baseUrl = 'https://neto-api.herokuapp.com/profile';
     this.callbackName = 'Profile' + Number(new Date());
     this.fetchCounter = 0;
 
+    /* Elements. */
+    this.container = container;
     this.description = container.querySelector('[data-description]');
     this.name = container.querySelector('[data-name]');
     this.pic = container.querySelector('[data-pic]');
     this.position = container.querySelector('[data-position]');
     this.technologies = container.querySelector('[data-technologies]');
 
-    this.user = {};
-    this.technologiesList = [];
-
     this.init();
-
   }
 
   init() {
-    this.loadData(this.url)
-      .then(this.handleUserInfo.bind(this));
+    this.loadUser()
+      .then(this.handleLoadUser.bind(this))
+      .then(this.loadTechnologies.bind(this))
+      .then(this.handleUserTechnologies.bind(this))
+      .then(this.render.bind(this));
   }
 
-  handleUserInfo(data) {
-    this.user = data;
-    const userTechnologies = `https://neto-api.herokuapp.com/profile/${this.user.id}/technologies`;
-
-    this.loadData(userTechnologies)
-      .then(this.handleUserTechnology.bind(this));
-
-  }
-  
-  handleUserTechnology(technologies) {
-    this.technologiesList = technologies;
-    this.render();
-  }
-
-  loadData(url) {
+  fetch(url) {
     return new Promise((done, fail) => {
       this.fetchCounter++;
       const callbackName = this.callbackName + this.fetchCounter;
@@ -54,25 +45,41 @@ class Profile {
       document.getElementsByTagName('head')[0].appendChild(script);
     });
   }
-  renderTechnologyCard(technology) {
-    const dev = document.createElement('span');
-    dev.className = 'devicons';
-    dev.classList.add(`devicons-${technology}`);
 
-    this.technologies.appendChild(dev);
+  loadUser() {
+    return this.fetch(`${this.baseUrl}/me`);
   }
-  
+
+  loadTechnologies() {
+    return this.fetch(`${this.baseUrl}/${this.user.id}/technologies`);
+  }
+
+  handleLoadUser(user) {
+    this.user = user;
+  }
+
+  handleUserTechnologies(technologies) {
+    this.userTechnologies = technologies;
+  }
+
   render() {
     const { pic, name, position, description } = this.user;
     this.pic.src = pic;
     this.name.innerHTML = name;
     this.position.innerHTML = position;
     this.description.innerHTML = description;
-    this.technologiesList.forEach(technology => this.renderTechnologyCard(technology))
+    this.userTechnologies.forEach(technology => this.renderTechnology(technology));
 
     this.container.style.display = 'initial';
   }
 
+  renderTechnology(technology) {
+    const dev = document.createElement('span');
+    dev.className = 'devicons';
+    dev.classList.add(`devicons-${technology}`);
+
+    this.technologies.appendChild(dev);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

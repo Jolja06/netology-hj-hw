@@ -10,7 +10,7 @@ class Stars {
     this.number = 200;
     this.colors = [ '#ffffff', '#ffe9c4', '#d4fbff' ];
 
-    this.canvas.addEventListener('click', this.render.bind(this))
+    this.canvas.addEventListener('click', this.render.bind(this));
     this.init();
   }
 

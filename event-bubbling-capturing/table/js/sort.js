@@ -2,6 +2,11 @@
 
 function handleTableClick(event) {
   const target = event.target;
+
+  if (target.tagName !== 'TH') {
+    return;
+  }
+
   const propName = target.dataset.propName;
   if (!propName) {
     return;

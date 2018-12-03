@@ -1,39 +1,40 @@
-'use strict';
-
 class Pooling {
-	constructor(container) {
+	constructor(container, url = 'https://neto-api.herokuapp.com/comet/pooling') {
 		if (!(container instanceof Element)) return;
 
-		this.container = container;
-		this.cells = this.container.querySelectorAll('div');
+		this.cells = Array.prototype.slice.call(container.querySelectorAll('div'));
+		this.url = url;
+			this.xhr = new XMLHttpRequest();
 
-		this.xhr = new XMLHttpRequest();
 		this.xhr.addEventListener('load', this.handleLoad.bind(this));
 
-		setInterval(this.fetchData.bind(this), 5000);
-
+		this.init();
 	}
 
+	init() {
+		setInterval(this.fetch.bind(this), 5000);
+	}
 
-	fetchData() {
+	fetch() {
 		this.xhr.open('GET', 'https://neto-api.herokuapp.com/comet/pooling', true);
 		this.xhr.send();
 	}
 
 	handleLoad() {
+		const result = this.xhr.responseText;
 		if (this.xhr.status === 200) {
-			this.setCard(this.xhr.responseText);
+			this.setCard(result - 1);
 		} else {
-			console.error(this.xhr.responseText);
+			console.error(result);
 		}
 	}
 
-	setCard(number) {
-		Array.from(this.cells).forEach(cell => cell.classList.remove('flip-it'));
-		this.cells[number - 1].classList.add('flip-it');
+	setCard(index) {
+		this.cells.forEach((cell, cellIndex) => cell.classList.toggle('flip-it', cellIndex === index));
 	}
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-	new Pooling(document.querySelector('.pooling'))
+	const container = document.querySelector('main');
+	new Pooling(container.querySelector('.pooling'));
 });

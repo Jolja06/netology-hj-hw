@@ -1,28 +1,18 @@
-'use strict';
-
 class Socket {
 	constructor(container) {
 		if (!(container instanceof Element)) return;
 
-		this.container = container;
-		this.cells = this.container.querySelectorAll('div');
+		this.cells = Array.prototype.slice.call(container.querySelectorAll('div'));
 		this.socket = new WebSocket('wss://neto-api.herokuapp.com/comet/websocket');
 
 		this.socket.addEventListener('message', this.setCard.bind(this));
-		this.socket.addEventListener('error', this.onError.bind(this));
+		this.socket.addEventListener('error', console.error);
 		window.addEventListener('beforeunload', this.handleClose.bind(this));
-
 	}
 
-	setCard(event) {
-		const number = event.data;
-
-		Array.from(this.cells).forEach(cell => cell.classList.remove('flip-it'));
-		this.cells[number - 1].classList.add('flip-it');
-	}
-
-	onError(event) {
-		console.error(event.data);
+	setCard({ data }) {
+		const index = data - 1;
+		this.cells.forEach((cell, cellIndex) => cell.classList.toggle('flip-it', cellIndex === index));
 	}
 
 	handleClose() {
@@ -31,5 +21,6 @@ class Socket {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-	new Socket(document.querySelector('.websocket'));
+	const container = document.querySelector('main');
+	new Socket(container.querySelector('.websocket'));
 });

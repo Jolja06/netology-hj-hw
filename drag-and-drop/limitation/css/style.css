@@ -18,7 +18,7 @@ body{
   height: 15px;
   background-color: #000;
   border-radius: 50%;
-  position: absolute;  
+  position: absolute;
   transition: all 0.5s;
 }
 .left_eye{
@@ -39,7 +39,7 @@ body{
 
 .message{
   opacity: 0;
-  font-family: roboto;
+  font-family: 'Roboto', sans-serif;
   font-weight: bold;
   padding: 10px 15px;
   width: max-content;

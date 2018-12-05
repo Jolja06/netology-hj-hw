@@ -1,20 +1,26 @@
 'use strict';
 
-class Eyes {
-	constructor() {
-		this.cat = document.querySelector('.cat');
-		this.rightEye = this.cat.querySelector('.cat_eye_right');
-		this.leftEye = this.cat.querySelector('.cat_eye_left');
+class Eye {
+	constructor(eye) {
+		if (!(eye instanceof Element)) return;
 
-		this.cat.addEventListener('mousemove', this.throttle(this.moution.bind(this)));
+		document.addEventListener('mousemove', (event) => this.throttle(this.movement(event)));
+		this.eye = eye;
 	}
 
-	moution(e) {
+  movement(event) {
+			const {left, top, width, height} = this.eye.getBoundingClientRect();
+			const x = left + width / 2;
+			const y = top + height / 2;
+			const rad = Math.atan2(event.pageX - x, event.pageY - y);
+			const rotation = (rad * (180 / Math.PI) * -1) + 180;
+
+			this.eye.style.transform = `rotate(${rotation}deg)`;
 	}
 
 	throttle(callback) {
 		let isWaiting = false;
-		return function () {
+		return function() {
 			if (!isWaiting) {
 				callback.apply(this, arguments);
 				isWaiting = true;
@@ -24,6 +30,10 @@ class Eyes {
 			}
 		}
 	}
+
 }
 
-document.addEventListener('DOMContentLoaded', new Eyes);
+document.addEventListener('DOMContentLoaded', () => {
+	new Eye(document.querySelector('.cat_position_for_right_eye'));
+	new Eye(document.querySelector('.cat_position_for_left_eye'));
+});

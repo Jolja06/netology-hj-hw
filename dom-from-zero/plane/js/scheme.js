@@ -2,52 +2,46 @@
 
 const isURL = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
 class Plane {
-	constructor(controls, view, footer, url) {
-		if (!(controls instanceof Element) || !(view instanceof Element) || !(footer instanceof Element) || !(isURL.test(url))) return;
-
-		this.controls = controls;
-		this.view = view;
-		this.footer = footer;
-		this.url = url;
-		this.plane = this.controls.querySelector('#acSelect');
-		this.seatMap = this.controls.querySelector('#btnSeatMap');
-
-		this.seatMapTitle = this.view.querySelector('#seatMapTitle');
-		this.seatMapScheme = this.view.querySelector('#seatMapDiv');
-
-		this.id = this.plane.value;
-		this.plane.addEventListener('change', this.fetchId.bind(this));
-		this.seatMap.addEventListener('click', this.fetchData.bind(this));
-		this.seatMapScheme.addEventListener('click', this.setBusy.bind(this));
-
-		this.total = this.footer.querySelector('#totalPax');
-		this.adults = this.footer.querySelector('#totalAdult');
-		this.child = this.footer.querySelector('#totalHalf');
-
-		this.setFull = this.controls.querySelector('#btnSetFull');
-		this.setEmpty = this.controls.querySelector('#btnSetEmpty');
-
-		this.setFull.addEventListener('click', this.changeAll.bind(this));
-		this.setEmpty.addEventListener('click', this.changeAll.bind(this));
-
+	constructor(container, url) {
+		if (!(container instanceof Element) || !isURL.test(url)) return;
+    
+    this.url = url;
+    
+    const controls = container.querySelector('.header-bar');
+    this.plane = controls.querySelector('#acSelect');
+    this.buttonShow = controls.querySelector('#btnSeatMap');
+    this.buttonFill = controls.querySelector('#btnSetFull');
+    this.buttonClear = controls.querySelector('#btnSetEmpty');
+    
+    this.view = container.querySelector('.main-view');
+    this.title = this.view.querySelector('#seatMapTitle');
+		this.scheme = this.view.querySelector('#seatMapDiv');
+    
+		const footer = container.querySelector('.total-bar');
+		this.total = footer.querySelector('#totalPax');
+		this.adults = footer.querySelector('#totalAdult');
+		this.child = footer.querySelector('#totalHalf');
 
 		this.init();
-
 	}
 
 	init() {
-		this.setFull.disabled = true;
-		this.setEmpty.disabled = true;
-
-	}
-
-	fetchId(event) {
-		this.id = event.target.value;
+		this.buttonFill.disabled = true;
+		this.buttonClear.disabled = true;
+    
+    this.toggleSeats = this.toggleSeats.bind(this);
+    this.buttonShow.addEventListener('click', this.fetchData.bind(this));
+    this.buttonFill.addEventListener('click', this.toggleSeats);
+    this.buttonClear.addEventListener('click', this.toggleSeats);
+    
+    this.scheme.addEventListener('click', this.setBusy.bind(this));
 	}
 
 	fetchData(event) {
 		event.preventDefault();
-		fetch(this.url + this.id)
+    
+    const id = this.plane.value;
+		fetch(this.url + id)
 			.then(response => {
 				if (response.status >= 200 && response.status < 300) return response;
 				throw new Error(response.statusText);
@@ -55,15 +49,13 @@ class Plane {
 			.then(result => result.json())
 			.then(data => { 
 				this.renderTitle(data);
-				return data;
+        this.renderScheme(data);
+        this.buttonFill.disabled = false;
+        this.buttonClear.disabled = false;
 			})
-			.then(data => this.renderScheme(data))
+      .catch(console.error);
 	}
-
-	renderTitle(plane) {
-		this.seatMapTitle.innerText = `${plane.title} (${plane.passengers} пассажиров)`;
-	}
-
+  
 	createElem(tag, attrs, children) {
 		const el = document.createElement(tag);
 		if (typeof attrs === 'object' && attrs !== null) {
@@ -79,11 +71,15 @@ class Plane {
 		return el;
 	}
 
-	renderScheme(data) {
-		this.setEmpty.disabled = false;
-		this.setFull.disabled = false;
+	renderTitle(plane) {
+		this.title.innerText = `${plane.title} (${plane.passengers} пассажиров)`;
+	}
 
-		Array.from(this.seatMapScheme.children).forEach(child => child.parentNode.removeChild(child));
+	renderScheme(data) {
+		this.buttonClear.disabled = false;
+		this.buttonFill.disabled = false;
+
+		Array.from(this.scheme.children).forEach(child => child.parentNode.removeChild(child));
 		data.scheme.forEach((item, index) => {
 			const letters = item === 4 ? [].concat('', data.letters4, '') : ((item === 6) ? data.letters6 : []);
 			const row = this.createElem('div', {class: 'row seating-row text-center'}, [
@@ -102,7 +98,7 @@ class Plane {
 			row.appendChild(sideLeft);
 			row.appendChild(sideRight);
 
-			this.seatMapScheme.appendChild(row);
+			this.scheme.appendChild(row);
 		});
 
 		this.renderFooter();
@@ -131,7 +127,6 @@ class Plane {
 				target.classList.remove('half');
 				target.classList.toggle('adult')
 			}
-
 		}
 
 		const block = event.target.closest('#seatMapDiv');
@@ -141,7 +136,6 @@ class Plane {
 		const children = (Array.from(seats).filter(seat => seat.classList.contains('half'))).length;
 
 		this.renderFooter(adults, children);
-
 	}
 
 	renderFooter(adult = 0, child = 0) {
@@ -150,20 +144,24 @@ class Plane {
 		this.child.textContent = child;
 	}
 
-	changeAll(event) {
+	toggleSeats(event) {
 		event.preventDefault();
-		const seats = this.view.querySelectorAll('.seat');
-
-		event.target.id === 'btnSetFull' ? Array.from(seats).forEach(seat => seat.classList.add('adult')) : Array.from(seats).forEach(seat => seat.classList.remove('half', 'adult'));
+		const seats = Array.from(this.view.querySelectorAll('.seat'));
+    
+    const { id } = event.target;
+    const isFill = id === 'btnSetFull';
+    seats.forEach(({classList}) => {
+      classList.toggle('adult', isFill);
+      if (!isFill) {
+        classList.remove('half');
+      }
+    })
 	}
-
 }
 
 document.addEventListener('DOMContentLoaded', () => {
 	new Plane(
-		document.querySelector('.header-bar'),
-		document.querySelector('.main-view'),
-		document.querySelector('.total-bar'),
+		document.body,
 		'https://neto-api.herokuapp.com/plane/',
-	)
+	);
 });
